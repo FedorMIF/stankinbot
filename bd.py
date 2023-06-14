@@ -69,4 +69,5 @@ async def get_admins():
     result = await conn.fetch('''
         SELECT user_id FROM users WHERE role = 'Администратор';
     ''')
+    await conn.close()
     return [row['user_id'] for row in result]

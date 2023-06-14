@@ -78,11 +78,6 @@ async def send_welcome(message):
                                       f'я бот, который строит маршрут между аудиториями МГТУ Станкин.')
     await bd.add_new_user(message.from_user.first_name, message.chat.id, 'пользователь')
 
-@dp.message_handler(commands=['sendimg'])
-async def sen_img(mess):
-    onlyfiles = [f for f in listdir('src/png/') if isfile(join('src/png/', f))]
-    await bot.send_photo(mess.chat.id, photo=open(f"src/png/{random.choice(onlyfiles)}.png", 'rb'), caption='Это МТГУ Станкин')
-
 @dp.message_handler(commands=['myrole'])
 async def send_myrole(mess):
     user_id = mess.from_user.id
@@ -105,31 +100,31 @@ async def change_role_callback(callback_query: CallbackQuery):
 async def student_info_fullname(mess: types.Message, state: FSMContext):
     await state.update_data(role=mess.text.strip())
     await StudentInfo.fullname.set()
-    await bot.send_message(mess.chat.id, "Введите ваше имя и фамилию:", reply_markup=ReplyKeyboardRemove())
+    await bot.send_message(mess.chat.id, "Введите Ваши имя и фамилию:", reply_markup=ReplyKeyboardRemove())
 
 @dp.message_handler(lambda message: message.text and not message.text.isspace(), state=StudentInfo.fullname)
 async def student_info_group_number(mess: types.Message, state: FSMContext):
     await state.update_data(fullname=mess.text.strip())
     await StudentInfo.next()
-    await bot.send_message(mess.chat.id, "Введите номер вашей группы:")
+    await bot.send_message(mess.chat.id, "Введите номер Вашей группы:")
 
 @dp.message_handler(lambda message: message.text and not message.text.isspace(), state=StudentInfo.group_number)
 async def student_info_group_role(mess: types.Message, state: FSMContext):
     await state.update_data(group_number=mess.text.strip())
     await StudentInfo.next()
-    await bot.send_message(mess.chat.id, "Введите вашу роль в группе (Староста или Студент):")
+    await bot.send_message(mess.chat.id, "Введите Вашу роль в группе (Староста или Студент):")
 
 @dp.message_handler(lambda message: message.text in ["Староста", "Студент"], state=StudentInfo.group_role)
 async def student_info_phone(mess: types.Message, state: FSMContext):
     await state.update_data(group_role=mess.text)
     await StudentInfo.next()
-    await bot.send_message(mess.chat.id, "Введите ваш номер телефона (по желанию):")
+    await bot.send_message(mess.chat.id, "Введите Ваш номер телефона (по желанию):")
 
 @dp.message_handler(lambda message: message.text, state=StudentInfo.phone)
 async def student_info_email(mess: types.Message, state: FSMContext):
     await state.update_data(phone=mess.text)
     await StudentInfo.next()
-    await bot.send_message(mess.chat.id, "Введите ваш номер электронную почту (по желанию):")
+    await bot.send_message(mess.chat.id, "Введите Ваш номер электронную почту (по желанию):")
 
 @dp.message_handler(lambda message: message.text, state=StudentInfo.email)
 async def process_phone_and_email(mess: types.Message, state: FSMContext):
@@ -137,7 +132,7 @@ async def process_phone_and_email(mess: types.Message, state: FSMContext):
  
     user_data = await state.get_data()
 
-    if user_data['role'] == 'Староста':
+    if user_data['group_role'] == 'Староста':
 
         user_info = f"{mess.from_user.id},{user_data['role']}"
         admins = await bd.get_admins()
@@ -186,12 +181,12 @@ async def confirm_role_change(callback_query: types.CallbackQuery):
 async def decline_role_change(callback_query: CallbackQuery):
     _, user_id = callback_query.data.split(',')
 
-    await bot.send_message(int(user_id), "Администратор отклонил ваш запрос на изменение роли.")
+    await bot.send_message(int(user_id), "Администратор отклонил Ваш запрос на изменение роли.")
     await bot.edit_message_reply_markup(callback_query.from_user.id, callback_query.message.message_id)
 
 @dp.message_handler(commands=['findway'])
 async def what_aud(mess: types.Message, state:FSMContext):
-    await bot.send_message(mess.chat.id, 'Напиши *два* номера аудиторий через пробел:\n\n*Аудитория рядом* \t *Аудитория конечная*\n\n_Если хотите отменить команду напишите "Отмена"_', parse_mode="Markdown")
+    await bot.send_message(mess.chat.id, 'Напишите *два* номера аудиторий через пробел:\n\n*Аудитория рядом* \t *Аудитория конечная*\n\n_Если хотите отменить команду напишите "Отмена"_', parse_mode="Markdown")
     await state.set_state(row_auds.numbers.state)
 
 @dp.message_handler(state=row_auds.numbers)
@@ -211,19 +206,14 @@ async def make_way(mess: types.Message, state:FSMContext):
                 print(e)
             await state.finish()
         else:
-            await bot.send_message(mess.chat.id, 'Какого то номера нет, попробуй другой номер')
+            await bot.send_message(mess.chat.id, 'Такого номера нет, попробуйте другой номер')
             await state.set_state(row_auds.numbers.state)
     except:
         if auds[0].lower() == 'отмена':
             await bot.send_message(mess.chat.id, 'Вы решили отменить путешествие по коридорам МТГУ Станкин')
         else:
-            await bot.send_message(mess.chat.id, 'Ты ввел не числа, введи просто два номера аудиторий через пробел')
+            await bot.send_message(mess.chat.id, 'Вы ввели не числа, введите просто два номера аудиторий через пробел')
             await state.set_state(row_auds.numbers.state)
-
-@dp.message_handler(commands=['test'])
-async def send_test(mess):
-    onlyfiles = [f for f in listdir('src/png/') if isfile(join('src/png/', f))]
-    await bot.send_photo(mess.chat.id, photo=open(f"src/png/{onlyfiles[0]}.png", 'rb'), caption='Шаг 1', reply_markup=menu1)
 
 
 @dp.callback_query_handler(text = 'left')
